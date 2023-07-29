@@ -4,12 +4,16 @@ import { useState } from "react";
 export default function RegisFormPage() {
   const [fname, setFname] = useState("");
   const [fnameError, setFnameError] = useState(false);
+  const [lnameError, setLnameError] = useState(false);
   const [lname, setLname] = useState("");
   const [plan, setPlan] = useState("");
   const [gender, setGender] = useState(null);
   const [buyBottle, setBuyBottle] = useState(false);
   const [buyShoes, setBuyShoes] = useState(false);
   const [buyCap, setBuyCap] = useState(false);
+  const [isUserAgreed, setIsUserAgreed] = useState(false);
+  const [SelectPlanError, setSelectPlanError] = useState(false);
+  const [GenderError, setGenderError] = useState(false);
 
   const inputFnameOnChange = (event) => {
     setFnameError(false);
@@ -18,18 +22,22 @@ export default function RegisFormPage() {
 
   const inputLnameOnChange = (event) => {
     setLname(event.target.value);
+    setLnameError(false);
   };
 
   const selectPlanOnChange = (event) => {
     setPlan(event.target.value);
+    setSelectPlanError(false);
   };
 
   const radioGenderMaleOnChange = () => {
     setGender("male");
+    setGenderError(false);
   };
 
   const radioGenderFemaleOnChange = () => {
     setGender("female");
+    setGenderError(false);
   };
 
   const cbBuyBottleOnChange = (event) => {
@@ -54,21 +62,39 @@ export default function RegisFormPage() {
     if (buyShoes) total += 600;
     if (buyCap) total += 400;
 
+    if (buyBottle && buyShoes && buyCap) {
+      total *= 0.8; // 20% discount
+    }
+
     return total;
   }
 
   const registerBtnOnClick = () => {
-    let fnameOk = true;
-    if (fname === "") {
-      fnameOk = false;
-      setFnameError(true);
-    }
+    let fnameOk = fname.trim() !== "";
+    let lnameOk = lname.trim() !== "";
+    let planOk = plan !== "";
+    let genderOk = gender !== null;
 
-    if (fnameOk) {
+    setFnameError(!fnameOk);
+    setLnameError(!lnameOk);
+    setSelectPlanError(!planOk);
+    setGenderError(!genderOk);
+
+    if (fnameOk && lnameOk && planOk && genderOk && isUserAgreed) {
+      const totalPayment = computeTotalPayment();
+      const discounted = buyBottle && buyShoes && buyCap;
       alert(
-        `Registration complete. Please pay money for ${computeTotalPayment().toLocaleString()} THB.`
+        `Registration complete. Please pay money for ${
+          discounted
+            ? totalPayment.toLocaleString()
+            : totalPayment.toLocaleString()
+        } THB.`
       );
     }
+  };
+
+  const handleAgreeCheckboxChange = () => {
+    setIsUserAgreed((prevState) => !prevState);
   };
 
   return (
@@ -83,16 +109,20 @@ export default function RegisFormPage() {
             onChange={inputFnameOnChange}
             value={fname}
           />
-          <div className="invalid-feedback">Invalid first name</div>
+          {fnameError && (
+            <div className="invalid-feedback">Invalid first name</div>
+          )}
         </div>
         <div>
           <label className="form-label">Last name</label>
           <input
-            className="form-control"
+            className={"form-control" + (lnameError ? " is-invalid" : "")}
             onChange={inputLnameOnChange}
             value={lname}
           />
-          <div className="invalid-feedback">Invalid last name</div>
+          {lnameError && (
+            <div className="invalid-feedback">Invalid last name</div>
+          )}
         </div>
       </div>
 
@@ -100,7 +130,7 @@ export default function RegisFormPage() {
       <div>
         <label className="form-label">Plan</label>
         <select
-          className="form-select"
+          className={"form-select" + (SelectPlanError ? " is-invalid" : "")}
           onChange={selectPlanOnChange}
           value={plan}
         >
@@ -110,12 +140,16 @@ export default function RegisFormPage() {
           <option value="half">Half Marathon 21 Km (1,200 THB)</option>
           <option value="full">Full Marathon 42.195 Km (1,500 THB)</option>
         </select>
-        <div className="invalid-feedback">Please select a Plan</div>
+        {SelectPlanError && (
+          <div className="invalid-feedback">Please select a Plan</div>
+        )}
       </div>
 
       {/* Gender */}
       <div>
-        <label className="form-label">Gender</label>
+        <label className={"form-label" + (GenderError ? " is-invalid" : "")}>
+          Gender
+        </label>
         <div>
           <input
             className="me-2 form-check-input"
@@ -133,7 +167,9 @@ export default function RegisFormPage() {
           Female 👩
           {/* To show error when user did not select gender, */}
           {/* We just have to render the div below (Not using is-invalid bootstrap class) */}
-          {/* <div className="text-danger">Please select gender</div> */}
+          {GenderError && (
+            <div className="text-danger">Please select gender</div>
+          )}
         </div>
       </div>
 
@@ -177,21 +213,27 @@ export default function RegisFormPage() {
       <div>
         Total Payment : {computeTotalPayment().toLocaleString()} THB
         {/* Render below element conditionally when user get 20% discount */}
-        {/* <span className="text-success d-block">(20% Discounted)</span> */}
+        {buyBottle && buyShoes && buyCap && (
+          <span className="text-success d-block">(20% Discounted)</span>
+        )}
       </div>
 
       {/* Terms and conditions */}
       <div>
-        <input className="me-2" type="checkbox" />I agree to the terms and
-        conditions
+        <input
+          className="me-2"
+          type="checkbox"
+          onChange={handleAgreeCheckboxChange}
+          checked={isUserAgreed}
+        />
+        I agree to the terms and conditions
       </div>
 
       {/* Register Button */}
       <button
         className="btn btn-success my-2"
         onClick={registerBtnOnClick}
-        //You can embbed a state like below to disabled the button
-        //disabled={isUserAgreed}
+        disabled={!isUserAgreed}
       >
         Register
       </button>
